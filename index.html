@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do Lista</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f7f7f7;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 28px;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        #task-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .task {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .task:hover {
+            background-color: #e9e9e9;
+        }
+
+        .task-text {
+            flex-grow: 1;
+            margin-left: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .task.completed .task-text {
+            text-decoration: line-through;
+            color: #888;
+        }
+
+        button {
+            padding: 12px 20px;
+            margin-top: 10px;
+            width: 100%;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        .pagination-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        #next-page, #prev-page {
+            display: none;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        #next-page:hover, #prev-page:hover {
+            background-color: #0056b3;
+        }
+
+        .checkbox, .delete-btn {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            color: red;
+            font-weight: bold;
+            font-size: 18px;
+            padding-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vår To-Do Lista</h1>
+        <div id="task-list"></div>
+        <button id="add-task">Lägg till uppgift</button>
+    </div>
+
+    <div class="pagination-buttons">
+        <button id="prev-page">← Föregående sida</button>
+        <button id="next-page">Nästa sida →</button>
+    </div>
+
+    <script>
+        const taskList = document.getElementById('task-list');
+        const addTaskButton = document.getElementById('add-task');
+        const nextPageButton = document.getElementById('next-page');
+        const prevPageButton = document.getElementById('prev-page');
+
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let currentPage = 0;
+        const tasksPerPage = 5;
+
+        function renderTasks() {
+            taskList.innerHTML = '';
+            const start = currentPage * tasksPerPage;
+            const end = start + tasksPerPage;
+            const tasksToShow = tasks.slice(start, end);
+
+            tasksToShow.forEach((task, index) => {
+                const taskElement = document.createElement('div');
+                taskElement.classList.add('task');
+                if (task.completed) taskElement.classList.add('completed');
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = task.completed;
+                checkbox.classList.add('checkbox');
+                checkbox.addEventListener('change', () => {
+                    task.completed = checkbox.checked;
+                    saveTasks();
+                    renderTasks();
+                });
+
+                const taskText = document.createElement('div');
+                taskText.classList.add('task-text');
+                taskText.textContent = task.text;
+
+                const deleteBtn = document.createElement('span');
+                deleteBtn.textContent = '🗑️';
+                deleteBtn.classList.add('delete-btn');
+                deleteBtn.addEventListener('click', () => {
+                    if (task.completed) {
+                        tasks.splice(start + index, 1);
+                        saveTasks();
+                        renderTasks();
+                        updatePaginationButtons();
+                    } else {
+                        alert('Du måste först markera uppgiften som klar.');
+                    }
+                });
+
+                taskElement.appendChild(checkbox);
+                taskElement.appendChild(taskText);
+                taskElement.appendChild(deleteBtn);
+                taskList.appendChild(taskElement);
+            });
+        }
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        addTaskButton.addEventListener('click', () => {
+            const taskText = prompt('Vad är din uppgift?');
+            if (taskText) {
+                tasks.push({ text: taskText, completed: false });
+                saveTasks();
+                renderTasks();
+                updatePaginationButtons();
+            }
+        });
+
+        function updatePaginationButtons() {
+            nextPageButton.style.display = (currentPage + 1) * tasksPerPage < tasks.length ? 'block' : 'none';
+            prevPageButton.style.display = currentPage > 0 ? 'block' : 'none';
+        }
+
+        nextPageButton.addEventListener('click', () => {
+            currentPage++;
+            renderTasks();
+            updatePaginationButtons();
+        });
+
+        prevPageButton.addEventListener('click', () => {
+            currentPage--;
+            renderTasks();
+            updatePaginationButtons();
+        });
+
+        renderTasks();
+        updatePaginationButtons();
+    </script>
+</body>
+</html>
